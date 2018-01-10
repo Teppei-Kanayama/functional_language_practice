@@ -561,3 +561,27 @@ let output15 = [{namae="表参道"; saitan_kyori=2.8; temae_list=["表参道"; "
                 {namae="東大前"; saitan_kyori=infinity; temae_list=[]}]
 
 let test15 = koushin p15 v15 = output15
+
+(* eki_t list型のリストを受け取ったら、「最短距離最小の駅」と「最短距離最小の駅以外からなるリスト」の組を返す関数 *)
+(* saitan_wo_bunri: eki_t list -> eki_t * eki_t list *)
+(* 引数を二つにしてしまっているのが、要求と異なるので少し気になる *)
+let rec saitan_wo_bunri eki_t_list eki_t_list_origin = match eki_t_list with
+  [] -> ({namae="dummy"; saitan_kyori=infinity; temae_list=[]}, [])
+  | {namae=namae; saitan_kyori=saitan_kyori; temae_list=temae_list} :: rest ->
+    let tmp = saitan_wo_bunri rest eki_t_list_origin in
+      match tmp with
+        ({namae=namae_rest; saitan_kyori=saitan_kyori_rest; temae_list=temae_list_rest}, arg2) ->
+          if saitan_kyori < saitan_kyori_rest
+          then
+            let f namae station = match station with
+              {namae=n; saitan_kyori=s; temae_list=t} -> n != namae in
+                ({namae=namae; saitan_kyori=saitan_kyori; temae_list=temae_list}, List.filter (f namae) eki_t_list_origin)
+          else tmp
+
+let input16 = [{namae="表参道"; saitan_kyori=11.3; temae_list=["表参道"; "hoge"; "渋谷"]};
+               {namae="東大前"; saitan_kyori=7.2; temae_list=["fuga"; "hoge"; "渋谷"]};
+               {namae="茗荷谷"; saitan_kyori=10.5; temae_list=["表参道"; "hoge"; "piyo"]}]
+
+let output16 = ({namae="東大前"; saitan_kyori=7.2; temae_list=["fuga"; "hoge"; "渋谷"]}, [{namae="表参道"; saitan_kyori=11.3; temae_list=["表参道"; "hoge"; "渋谷"]}; {namae="茗荷谷"; saitan_kyori=10.5; temae_list=["表参道"; "hoge"; "piyo"]}])
+
+let test16 = saitan_wo_bunri input16 input16 = output16
