@@ -540,16 +540,16 @@ let output14 = {namae="東大前"; saitan_kyori=infinity; temae_list=[]}
 let test14 = koushin1 p14 q14 = output14
 *)
 
-(* 直前に確定した駅と未確定の駅のリストを受け取ったら、必要な更新処理を行ったあとの未確定の駅のリストを返す関数 *)
-(* eki_t -> eki_t list -> eki_t list *)
-let koushin p v =
+(* 直前に確定した駅と未確定の駅のリスト、駅間距離のリストを受け取ったら、必要な更新処理を行ったあとの未確定の駅のリストを返す関数 *)
+(* eki_t -> eki_t list -> ekikan_t list -> eki_t list *)
+let koushin p v ekikan_list=
   (* 直前に確定した駅pと未確定の駅qを受け取ったら、pとqが直接つながっているかどうかを調べ、つながっていたらqの最短距離と手前リストを更新し、つながっていなかったらもとのqのまま返す関数 *)
   (* koushin1: eki_t -> eki_t -> eki_t *)
   List.map ((fun p q -> match p with
               {namae=pn; saitan_kyori=ps; temae_list=pt} ->
                 match q with
                   {namae=qn; saitan_kyori=qs; temae_list=qt} ->
-                    let ekikan_kyori = get_ekikan_kyori pn qn global_ekikan_list in
+                    let ekikan_kyori = get_ekikan_kyori pn qn ekikan_list in
                       if ekikan_kyori = infinity then q
                       else if ps +. ekikan_kyori > qs then q
                       else {namae=qn; saitan_kyori=ps+.ekikan_kyori; temae_list=qn::pt}) p) v
@@ -560,7 +560,7 @@ let v15 = [{namae="表参道"; saitan_kyori=infinity; temae_list=[]};
 let output15 = [{namae="表参道"; saitan_kyori=2.8; temae_list=["表参道"; "hoge"; "渋谷"]};
                 {namae="東大前"; saitan_kyori=infinity; temae_list=[]}]
 
-let test15 = koushin p15 v15 = output15
+let test15 = koushin p15 v15 global_ekikan_list = output15
 
 (* eki_t list型のリストを受け取ったら、「最短距離最小の駅」と「最短距離最小の駅以外からなるリスト」の組を返す関数 *)
 (* saitan_wo_bunri: eki_t list -> eki_t * eki_t list *)
@@ -585,3 +585,32 @@ let input16 = [{namae="表参道"; saitan_kyori=11.3; temae_list=["表参道"; "
 let output16 = ({namae="東大前"; saitan_kyori=7.2; temae_list=["fuga"; "hoge"; "渋谷"]}, [{namae="表参道"; saitan_kyori=11.3; temae_list=["表参道"; "hoge"; "渋谷"]}; {namae="茗荷谷"; saitan_kyori=10.5; temae_list=["表参道"; "hoge"; "piyo"]}])
 
 let test16 = saitan_wo_bunri input16 input16 = output16
+
+(* 未確定の駅のリストと駅間のリストを受け取ったら、ダイクストラのアルゴリズムにより各駅について最短距離と経路が正しく入ったリストを返す関数 *)
+(* eki_t list -> ekikan_t list -> eki_t list *)
+let rec dijkstra_main eki_list ekikan_list =
+  match eki_list with
+  [] -> []
+  | first :: rest ->
+    let saitan_pair = saitan_wo_bunri eki_list eki_list in
+      match saitan_pair with
+        (saitan_eki_t, saitan_igai_list) ->
+          let new_saitan_igai_list = koushin saitan_eki_t saitan_igai_list ekikan_list in
+            saitan_eki_t :: dijkstra_main new_saitan_igai_list ekikan_list
+
+(* 始点のローマ字名と終点のローマ字名を受け取ったら、終点の駅のレコードを返すよう関数 *)
+(* dijkstra: string -> string -> eki_t *)
+let dijkstra shiten shuten =
+  let preprocessed_ekimei_list = seiretsu global_ekimei_list in
+    let shiten_kanji = romaji_to_kanji shiten preprocessed_ekimei_list in
+      let shuten_kanji = romaji_to_kanji shuten preprocessed_ekimei_list in
+        let eki_t_list = make_initial_eki_list preprocessed_ekimei_list shiten_kanji in
+          let saitanro_list = dijkstra_main eki_t_list global_ekikan_list in
+          let rec search_station saitanro shuten =
+            match saitanro with
+              [] -> {namae=""; saitan_kyori=infinity; temae_list=[]}
+              | {namae=namae; saitan_kyori=saitan_kyori; temae_list=temae_list} as first :: rest ->
+                if namae = shuten
+                then first
+                else search_station rest shuten
+           in search_station saitanro_list shuten_kanji
