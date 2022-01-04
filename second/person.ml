@@ -6,14 +6,44 @@ type person_t = {
   blood_type: string;
 }
 
-let ketsueki_hyoji person = match person with 
-  {name = name; height = height; weight = weight; birth_day = birth_day; blood_type = blood_type} 
-    -> name ^ "さんの血液型は" ^ blood_type ^ "型です"
-
-let test1 = ketsueki_hyoji {
+let person1 = {
   name="河野太郎";
   height=171.2;
   weight=63.3;
   birth_day=(1, 3);
   blood_type="A";
-} = "河野太郎さんの血液型はA型です"
+}
+
+let person2 = {
+  name="河野二郎";
+  height=171.2;
+  weight=63.3;
+  birth_day=(1, 3);
+  blood_type="B";
+}
+
+let person3 = {
+  name="河野三郎";
+  height=171.2;
+  weight=63.3;
+  birth_day=(1, 3);
+  blood_type="A";
+}
+
+let ketsueki_hyoji person = match person with 
+  {name = name; height = height; weight = weight; birth_day = birth_day; blood_type = blood_type} 
+    -> name ^ "さんの血液型は" ^ blood_type ^ "型です"
+
+let test1 = ketsueki_hyoji person1 = "河野太郎さんの血液型はA型です"
+
+let rec count_ketsueki_A lst = match lst with
+  [] -> 0
+  | {blood_type = blood_type} :: rest -> if blood_type = "A" then 1 + count_ketsueki_A rest
+                                                             else count_ketsueki_A rest
+
+let test = count_ketsueki_A [] = 0
+let test = count_ketsueki_A [person1] = 1
+let test = count_ketsueki_A [person2] = 0
+let test = count_ketsueki_A [person1; person2] = 1
+let test = count_ketsueki_A [person1; person2; person3] = 2
+
